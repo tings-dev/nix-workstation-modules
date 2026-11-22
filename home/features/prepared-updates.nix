@@ -24,6 +24,7 @@ let
         --state-dir ${lib.escapeShellArg "${config.xdg.stateHome}/frkl/system-updates/${cfg.hostName}"} \
         --host ${lib.escapeShellArg cfg.hostName} \
         --rebuild-command ${lib.escapeShellArg cfg.rebuildCommand} \
+        ${lib.concatMapStringsSep " " (arg: "--update-arg=${lib.escapeShellArg arg}") config.workstation.updateCommand} \
         --max-jobs ${toString cfg.maxJobs} --cores ${toString cfg.cores} "$@"
     '';
   };

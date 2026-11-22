@@ -129,10 +129,10 @@ class Updates:
                     raise UpdateError("The checkout changed during the snapshot; prepare again.")
                 original_lock = (source / "flake.lock").read_bytes()
                 print(f"Updating inputs for {self.args.host} from {commit[:12]}", flush=True)
-                run("nix", "flake", "update", cwd=source)
+                run(*(self.args.update_command or ["nix", "flake", "update"]), cwd=source)
                 run("nix", "build", "--no-write-lock-file", "--out-link", candidate / "system",
                     "--max-jobs", self.args.max_jobs, "--cores", self.args.cores,
-                    f"path:{source}#nixosConfigurations.{self.args.host}.config.system.build.toplevel",
+                    f"path:.#nixosConfigurations.{self.args.host}.config.system.build.toplevel",
                     cwd=source)
                 system = (candidate / "system").resolve(strict=True)
                 if not (system / "bin/switch-to-configuration").is_file():
@@ -225,6 +225,7 @@ def main():
     parser.add_argument("--state-dir", required=True)
     parser.add_argument("--host", required=True)
     parser.add_argument("--rebuild-command", required=True)
+    parser.add_argument("--update-arg", action="append", dest="update_command")
     parser.add_argument("--max-jobs", default="1")
     parser.add_argument("--cores", default="2")
     parser.add_argument("action", choices=["start", "prepare", "status", "apply"])

@@ -94,11 +94,12 @@ if os.environ.get("EDIT_DURING_APPLY"):
         return subprocess.run(["git", *args], cwd=self.repo, env=self.env,
                               check=True, capture_output=True).stdout
 
-    def invoke(self, action, success=True, **environment):
+    def invoke(self, action, success=True, update_command=(), **environment):
         result = subprocess.run(
             [sys.executable, str(SCRIPT), "--repository", str(self.repo),
              "--state-dir", str(self.state), "--host", "laptop",
-             "--rebuild-command", "/test/nixos-rebuild", action],
+             "--rebuild-command", "/test/nixos-rebuild",
+             *(f"--update-arg={arg}" for arg in update_command), action],
             env=self.env | environment, capture_output=True, text=True,
         )
         if success:
@@ -117,7 +118,7 @@ if os.environ.get("EDIT_DURING_APPLY"):
     def updates(self):
         return UPDATES.Updates(SimpleNamespace(
             repository=str(self.repo), state_dir=str(self.state), host="laptop",
-            rebuild_command="/test/nixos-rebuild", max_jobs="1", cores="2",
+            rebuild_command="/test/nixos-rebuild", update_command=None, max_jobs="1", cores="2",
         ))
 
     def test_unchanged_system_suppresses_ready_and_applied_notices(self):
@@ -172,6 +173,14 @@ if os.environ.get("EDIT_DURING_APPLY"):
         self.assertTrue(json.loads((candidate / "metadata.json").read_text())["applied_at"])
         self.invoke("apply", success=False)
         self.assertEqual(len(self.commands("sudo")), 1)
+
+    def test_prepare_uses_the_configured_update_command(self):
+        command = ["nix", "flake", "update", "--refresh", "modules/nixpkgs"]
+        before = (self.repo / "flake.lock").read_bytes()
+        self.invoke("prepare", update_command=command)
+        self.assertEqual(self.commands("nix")[0], command)
+        self.assertEqual((self.repo / "flake.lock").read_bytes(), before)
+        self.assertEqual((self.candidate() / "source/flake.lock").read_text(), '{"updated": "one"}\n')
 
     def test_next_success_replaces_unapplied_candidate_and_old_root(self):
         self.invoke("prepare")

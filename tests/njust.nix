@@ -26,6 +26,7 @@ let
     pkgs = pkgs // {
       nix = fakeNix;
     };
+    updateCommand = [ "nix" "flake" "update" "--refresh" "modules/nixpkgs" ];
     switchCommand = [
       fakeSwitch
       "switch"
@@ -145,7 +146,7 @@ pkgs.runCommand "njust-tests"
     rm "$NJUST_TEST_LOG"
 
     njust update
-    printf 'nix flake update\nswitch switch --flake .#test-host\n' > expected
+    printf 'nix flake update --refresh modules/nixpkgs\nswitch switch --flake .#test-host\n' > expected
     diff -u expected "$NJUST_TEST_LOG"
     test "$(git -C "$repository" log -1 --format=%s)" = 'chore(nix): update flake inputs'
     test "$(git -C "$repository" diff-tree --no-commit-id --name-only -r HEAD)" = flake.lock
@@ -166,7 +167,7 @@ pkgs.runCommand "njust-tests"
       echo 'input-update failure was ignored' >&2
       exit 1
     fi
-    printf 'nix flake update\n' > expected
+    printf 'nix flake update --refresh modules/nixpkgs\n' > expected
     diff -u expected "$NJUST_TEST_LOG"
     test "$(cat "$repository/flake.lock")" = original
     test "$(git -C "$repository" rev-parse HEAD)" = "$update_commit"

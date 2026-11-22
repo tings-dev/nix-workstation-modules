@@ -3,13 +3,15 @@
   pkgs,
   switchCommand,
   repository,
+  updateCommand ? [ "nix" "flake" "update" ],
 }:
 
 let
   justfile = pkgs.writeText "njust.just" (
-    builtins.replaceStrings [ "@switchCommand@" ] [ (pkgs.lib.escapeShellArgs switchCommand) ] (
-      builtins.readFile ../scripts/njust.just
-    )
+    builtins.replaceStrings
+      [ "@switchCommand@" "@updateCommand@" ]
+      (map pkgs.lib.escapeShellArgs [ switchCommand updateCommand ])
+      (builtins.readFile ../scripts/njust.just)
   );
 in
 pkgs.writeShellApplication {

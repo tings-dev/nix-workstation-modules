@@ -15,6 +15,7 @@
     (import ../pkgs/njust.nix {
       inherit pkgs;
       repository = config.workstation.repositoryPath;
+      inherit (config.workstation) updateCommand;
       switchCommand = config.workstation.management.switchCommand;
     })
   ];

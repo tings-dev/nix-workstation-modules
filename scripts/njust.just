@@ -1,6 +1,6 @@
 # Update and commit flake inputs, then activate this host
 update:
-    nix flake update
+    @updateCommand@
     git diff --quiet HEAD -- flake.lock || git commit --only -m "chore(nix): update flake inputs" -- flake.lock
     @switchCommand@
 
