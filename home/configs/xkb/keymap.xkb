@@ -1,0 +1,28 @@
+// US layout with German umlauts mapped to F13-F21
+// These keycodes are emitted by kanata tap-dance sequences
+//
+// F13 → ä    F14 → Ä
+// F15 → ö    F16 → Ö
+// F17 → ü    F18 → Ü
+// F19 → ß    F20 → ẞ
+// F21 → €
+
+xkb_keymap {
+    xkb_keycodes  { include "evdev+aliases(qwerty)" };
+    xkb_types     { include "complete" };
+    xkb_compat    { include "complete" };
+    xkb_symbols   {
+        include "pc+us+inet(evdev)"
+
+        key <FK13> { [ adiaeresis ] };
+        key <FK14> { [ Adiaeresis ] };
+        key <FK15> { [ odiaeresis ] };
+        key <FK16> { [ Odiaeresis ] };
+        key <FK17> { [ udiaeresis ] };
+        key <FK18> { [ Udiaeresis ] };
+        key <FK19> { [ ssharp     ] };
+        key <FK20> { [ U1E9E      ] };
+        key <FK21> { [ EuroSign   ] };
+    };
+    xkb_geometry  { include "pc(pc105)" };
+};

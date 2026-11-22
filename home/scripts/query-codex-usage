@@ -1,0 +1,33 @@
+auth_file="${CODEX_HOME:-$HOME/.codex}/auth.json"
+token=$(jq -er '.tokens.access_token' "$auth_file")
+
+# Keep the bearer token out of curl's process arguments.
+response=$(
+	printf 'header = "Authorization: Bearer %s"\n' "$token" |
+		curl --config - --fail --silent --show-error \
+			'https://chatgpt.com/backend-api/wham/usage' \
+			-H 'originator: Codex Desktop' \
+			-H 'OAI-Product-Sku: CODEX' \
+			-H 'Accept: application/json'
+)
+
+windows=$(jq -er '
+  [.rate_limit.primary_window, .rate_limit.secondary_window]
+  | map(select(. != null and .used_percent != null and .reset_at != null))
+  | if length == 0 then error("usage response has no reset windows")
+    else .[] | [.limit_window_seconds, (100 - .used_percent), .reset_at] | @tsv
+    end
+' <<<"$response")
+
+printf '%-12s | %-10s | %-23s | %s\n' 'Window' 'Remaining' 'Reset (UTC)' 'Reset (local)'
+printf '%s\n' '-------------+------------+-------------------------+-----------------------------------'
+while IFS=$'\t' read -r window_seconds remaining reset_at; do
+	case "$window_seconds" in
+	18000) window='5 hours' ;;
+	604800) window='7 days' ;;
+	*) window="${window_seconds}s" ;;
+	esac
+	reset_utc=$(date -u -d "@$reset_at" '+%Y-%m-%d %H:%M:%S UTC')
+	reset_local=$(date -d "@$reset_at" '+%Y-%m-%d %H:%M:%S %Z (%:z)')
+	printf '%-12s | %-10s | %-23s | %s\n' "$window" "${remaining}%" "$reset_utc" "$reset_local"
+done <<<"$windows"

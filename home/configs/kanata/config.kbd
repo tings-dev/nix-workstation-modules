@@ -1,0 +1,118 @@
+(defcfg
+  #|
+  This configuration will process all keys pressed inside of kanata, even if
+  they are not mapped in defsrc. This is so that certain actions can activate
+  at the right time for certain input sequences. By default, unmapped keys are
+  not processed through kanata due to a Windows issue related to AltGr. If you
+  use AltGr in your keyboard, you will likely want to follow the simple.kbd
+  file while unmapping lctl and ralt from defsrc.
+  |#
+  process-unmapped-keys yes
+  danger-enable-cmd no
+  log-layer-changes yes
+)
+
+(defsrc
+  grv  1    2    3    4    5    6    7    8    9    0    -    =    bspc
+  tab  q    w    e    r    t    y    u    i    o    p    [    ]    \
+  caps a    s    d    f    g    h    j    k    l    ;    '    ret
+  lsft z    x    c    v    b    n    m    ,    .    /    rsft
+  lctl lmet lalt           spc            ralt prtsc rctl pgup pgdn
+)
+
+(deflayer default
+  @grv  1    2    3    4    5    6    7    8    9    0    -    =    bspc
+  tab  q    w    @euro_tap    r    t    y    @ue_fork    i    @oe_fork    p    [    ]    \
+  lmet @ae_fork    @ss_fork    d    f    g    h    j    k    l    ;    '    ret
+  lsft z    x    c    v    b    n    m    ,    .    /    rsft
+  lctl @control_layer lalt           spc            ralt prtsc rctl @control_layer pgdn
+)
+
+(deflayer control
+  @grv  1    2    3    4    5    6    7    8    9    0    -    =    bspc
+  tab  q    w    @euro    lrld    t    y    @ue_control    i    @oe_control    p    [    ]    \
+  @cap @ae_control    @ss    d    f    g    h    left    down    up    rght    '    ret
+  lsft z    x    c    v    b    n    m    ,    .    /    rsft
+  lctl lmet lalt           spc            ralt prtsc rctl  pgup pgdn
+)
+
+(deflayer arrows
+  @grv  1    2    3    4    5    6    7    8    9    0    -    =    bspc
+  tab  q    w    e    r    t    y    u    up    o    p    [    ]    \
+  @cap a    s    d    f    g    h    left   down    up    rght '    ret
+  lsft z    x    c    v    b    n    m    ,    .    /    rsft
+  lctl @control_layer lalt           spc            ralt prtsc rctl pgup pgdn
+)
+
+(defalias
+  cap (tap-hold-press 200 200 esc lmet)
+  grv (tap-hold-press 200 200 grv (layer-while-held arrows))
+  ;; Windows and Page Up keep their hold layer; taps send no key event.
+  control_layer (tap-hold-press 200 200 XX (layer-while-held control))
+  lsftesc (tap-hold-release 200 200 esc lsft)
+
+  ae f13
+  Ae f14
+  oe f15
+  Oe f16
+  ue f17
+  Ue f18
+  ss f19
+  Ss f20
+  euro f21
+
+  ae_tap (tap-dance-eager 200 (
+    (macro a)
+    (macro a)
+    (macro bspc bspc f13)
+  ))
+  Ae_tap (tap-dance-eager 200 (
+    (macro S-a)
+    (macro S-a)
+    (macro bspc bspc f14)
+  ))
+  oe_tap (tap-dance-eager 200 (
+    (macro o)
+    (macro o)
+    (macro bspc bspc f15)
+  ))
+  Oe_tap (tap-dance-eager 200 (
+    (macro S-o)
+    (macro S-o)
+    (macro bspc bspc f16)
+  ))
+  ue_tap (tap-dance-eager 200 (
+    (macro u)
+    (macro u)
+    (macro bspc bspc f17)
+  ))
+  Ue_tap (tap-dance-eager 200 (
+    (macro S-u)
+    (macro S-u)
+    (macro bspc bspc f18)
+  ))
+  ss_tap (tap-dance-eager 200 (
+    (macro s)
+    (macro s)
+    (macro bspc bspc f19)
+  ))
+  Ss_tap (tap-dance-eager 200 (
+    (macro S-s)
+    (macro S-s)
+    (macro bspc bspc f20)
+  ))
+  euro_tap (tap-dance-eager 200 (
+    (macro e)
+    (macro e)
+    (macro bspc bspc f21)
+  ))
+
+  ae_fork (fork @ae_tap @Ae_tap (lsft rsft))
+  oe_fork (fork @oe_tap @Oe_tap (lsft rsft))
+  ue_fork (fork @ue_tap @Ue_tap (lsft rsft))
+  ss_fork (fork @ss_tap @Ss_tap (lsft rsft))
+
+  ae_control (fork @ae @Ae (lsft rsft))
+  oe_control (fork @oe @Oe (lsft rsft))
+  ue_control (fork @ue @Ue (lsft rsft))
+)

@@ -1,0 +1,57 @@
+output_format=table
+case "${1:-}" in
+--json) output_format=json ;;
+--help | -h)
+	printf 'Usage: query-codex-resets [--json]\n'
+	exit 0
+	;;
+"") ;;
+*)
+	printf 'Usage: query-codex-resets [--json]\n' >&2
+	exit 2
+	;;
+esac
+if (($# > 1)); then
+	printf 'Usage: query-codex-resets [--json]\n' >&2
+	exit 2
+fi
+
+auth_file="${CODEX_HOME:-$HOME/.codex}/auth.json"
+token=$(jq -er '.tokens.access_token' "$auth_file")
+
+# Pass the bearer token on stdin so it does not appear in curl's process arguments.
+response=$(
+	printf 'header = "Authorization: Bearer %s"\n' "$token" |
+		curl --config - --fail --silent --show-error --connect-timeout 15 --max-time 60 \
+			'https://chatgpt.com/backend-api/wham/rate-limit-reset-credits' \
+			-H 'originator: Codex Desktop' \
+			-H 'OAI-Product-Sku: CODEX' \
+			-H 'Accept: application/json'
+)
+
+reset_json=$(jq -ce '
+  .credits
+  | if type == "array" then . else error("credits must be an array") end
+  | if all(.[]; type == "object" and (.status | type == "string")) then .
+    else error("invalid reset credit") end
+  | [.[] | select(.status == "available") | .expires_at]
+  | if all(.[]; type == "string" and length > 0) then .
+    else error("invalid reset expiration") end
+' <<<"$response")
+if [[ $output_format == json ]]; then
+	printf '%s\n' "$reset_json"
+	exit 0
+fi
+
+resets=$(jq -r '.[]' <<<"$reset_json")
+if [[ -z $resets ]]; then
+	printf 'No available reset credits.\n'
+	exit 0
+fi
+
+printf '%-32s | %s\n' 'Original (API)' 'Local time'
+printf '%s\n' '---------------------------------+-----------------------------------'
+while IFS= read -r original; do
+	local_time=$(date -d "$original" '+%Y-%m-%d %H:%M:%S %Z (%:z)')
+	printf '%-32s | %s\n' "$original" "$local_time"
+done <<<"$resets"
