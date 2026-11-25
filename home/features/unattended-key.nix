@@ -50,8 +50,8 @@ let
         ''
       else
         ''
-          echo "tpm backend: the agent prompts for its PIN on first use; there is no separate arm step." >&2
-          exit 1
+          SSH_AUTH_SOCK="''${XDG_RUNTIME_DIR}/${socketName}" \
+            ssh-add -T "$HOME/${tpmKey}.pub"
         '';
   };
 
